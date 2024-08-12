@@ -5,6 +5,8 @@ const express = require('express')
 // https://www.npmjs.com/package/morgan
 const logger = require('morgan')
 
+const nodemailer = require("nodemailer")
+
 // ℹ️ Needed when we deal with cookies (we will when dealing with authentication)
 // https://www.npmjs.com/package/cookie-parser
 const cookieParser = require('cookie-parser')
@@ -13,7 +15,7 @@ const cookieParser = require('cookie-parser')
 // unless the request if from the same domain, by default express wont accept POST requests
 const cors = require('cors')
 
-const FRONTEND_URL = process.env.ORIGIN || 'http://localhost:5173'
+const FRONTEND_URL = process.env.ORIGIN || 'http://localhost:5175'
 
 // Middleware configuration
 module.exports = app => {
@@ -27,6 +29,33 @@ module.exports = app => {
       origin: [FRONTEND_URL],
     })
   )
+
+  app.post("/send-email", (req, res) => {
+    const { name, email, message } = req.body;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "your@gmail.com",
+        pass: "yourpassword"
+      },
+    });
+
+    const mailOptions = {
+      from: email,
+      to: "your@gmail.com",
+      subject: `New mesage from ${name}`,
+      text: message,
+    }
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).send({ success: false, error })
+      }
+      res.send({ success: true });
+    });
+  });
+
 
   // In development environment the app logs
   app.use(logger('dev'))
